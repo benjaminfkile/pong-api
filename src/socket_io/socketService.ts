@@ -1,17 +1,21 @@
 import onlinePlayersData from "../data/onlinePlayersData";
-import I_JoinOnlinePayload from "../interfaces/I_JoinOnlinePayload";
+import I_HeartbeatPayload from "../interfaces/I_HeartbeatPayload";
 
 const socketService = {
   init: (io: any) => {
     io.on('connection', (socket: any) => {
       console.log('Client connected:', socket.id);
 
-      socket.on('join_online', async ({ deviceId, username }: I_JoinOnlinePayload) => {
+      // Store the deviceId in the socket object when the player joins
+      socket.on('join_online', async ({ deviceId }: I_HeartbeatPayload) => {
         try {
-          const uName = username || socket.id;
+          socket.deviceId = deviceId; // Store the deviceId in the socket instance
 
-          // Check if the player already exists by deviceId, and just update socketId
-          await onlinePlayersData.addOrUpdateOnlinePlayer(deviceId, uName, socket.id);
+          // Remove the oldest entry if the deviceId already exists
+          await onlinePlayersData.removeOldestByDeviceId(deviceId);
+
+          // Add or update the player in the database using deviceId
+          await onlinePlayersData.addOrUpdateOnlinePlayer(deviceId, socket.id);
 
           // Emit the updated list of online players to all clients
           await io.emit("get_online_players", await onlinePlayersData.getOnlinePlayers());
@@ -20,19 +24,29 @@ const socketService = {
         }
       });
 
-      socket.on('heartbeat', async () => {
+      // Update last_active via heartbeat
+      socket.on('heartbeat', async ({ deviceId }: I_HeartbeatPayload) => {
         try {
-          await onlinePlayersData.updateLastActiveStatus(socket.id);
-          console.log("Received heartbeat from:", socket.id);
+          await onlinePlayersData.updateLastActiveStatus(deviceId);
+          console.log("Received heartbeat from device:", deviceId);
         } catch (error) {
           console.error('Error updating lastActive for player:', error);
         }
       });
 
+      // Remove the player by deviceId when the socket disconnects
       socket.on('disconnect', async () => {
         try {
-          // Optionally, you can handle disconnections, but avoid removing the player entirely.
-          console.log(`Client ${socket.id} disconnected`);
+          const { deviceId } = socket; // Retrieve the deviceId from the socket instance
+          if (deviceId) {
+            await onlinePlayersData.removeAllByDeviceId(deviceId);
+            console.log(`Removed all devices for deviceId: ${deviceId} after disconnect`);
+          } else {
+            console.log(`No deviceId found for socket: ${socket.id}`);
+          }
+
+          // Emit the updated list of online players to all clients
+          await io.emit("get_online_players", await onlinePlayersData.getOnlinePlayers());
         } catch (error) {
           console.error('Error handling disconnect:', error);
         }

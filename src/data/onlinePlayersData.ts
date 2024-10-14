@@ -5,7 +5,7 @@ const onlinePlayersData = {
   // Get all online players
   getOnlinePlayers: async () => {
     try {
-      const players = await db("online_players").select("device_id");
+      const players = await db("online_players").select("device_id", "last_active");
       return players;
     } catch (error) {
       console.error("Error retrieving online players:", error);
@@ -14,16 +14,16 @@ const onlinePlayersData = {
   },
 
   // Add or update an online player by deviceId
-  addOrUpdateOnlinePlayer: async (deviceId: string, username: string, socketId: string) => {
+  addOrUpdateOnlinePlayer: async (deviceId: string, socketId: string) => {
     try {
       // Check if the deviceId already exists
       const playerExists = await db("online_players").where({ device_id: deviceId }).first();
 
       if (playerExists) {
-        // If the player exists, update their socketId and last_active
+        // If the player exists, update their last_active timestamp
         await db("online_players")
           .where({ device_id: deviceId })
-          .update({ socket_id: socketId, last_active: db.fn.now() });
+          .update({ socket_id: socketId, last_active: db.fn.now()});
       } else {
         // If the player doesn't exist, create a new record
         await db("online_players").insert({
@@ -38,31 +38,44 @@ const onlinePlayersData = {
     }
   },
 
-  // Remove player by socketId
-  removePlayerBySocketId: async (socketId: string) => {
-    try {
-      // Check if the player exists by socketId
-      const player = await db("online_players").where({ socket_id: socketId }).first();
+    // Remove all players by deviceId
+    removeAllByDeviceId: async (deviceId: string) => {
+      try {
+        // Delete all players associated with the deviceId
+        const deletedRows = await db("online_players")
+          .where({ device_id: deviceId })
+          .del();
+  
+        console.log(`Removed ${deletedRows} player(s) with deviceId: ${deviceId}`);
+      } catch (error) {
+        console.error(`Error removing all players by deviceId: ${deviceId}`, error);
+        throw error;
+      }
+    },
 
-      if (player) {
-        // If the player exists, remove them by their deviceId
-        await db("online_players").where({ device_id: player.device_id }).del();
+  // Remove the oldest entry by deviceId (if multiple)
+  removeOldestByDeviceId: async (deviceId: string) => {
+    try {
+      const players = await db("online_players").where({ device_id: deviceId }).orderBy("last_active", "asc");
+
+      // If more than one entry exists, delete the oldest
+      if (players.length > 1) {
+        const oldestPlayer = players[0];
+        await db("online_players").where({ id: oldestPlayer.id }).del();
+        console.log(`Removed oldest player with deviceId: ${deviceId}`);
       }
     } catch (error) {
-      console.error("Error removing player by socketId:", error);
+      console.error("Error removing oldest player by deviceId:", error);
       throw error;
     }
   },
 
-  // Update player's last active time
-  updateLastActiveStatus: async (socketId: string) => {
+  // Update player's last active time by deviceId
+  updateLastActiveStatus: async (deviceId: string) => {
     try {
-      const player = await db("online_players").where({ socket_id: socketId }).first();
-      if (player) {
-        await db("online_players")
-          .where({ device_id: player.device_id })
-          .update({ last_active: db.fn.now() });
-      }
+      await db("online_players")
+        .where({ device_id: deviceId })
+        .update({ last_active: db.fn.now() });
     } catch (error) {
       console.error("Error updating player's last active status:", error);
       throw error;
