@@ -6,12 +6,11 @@ const socketService = {
     io.on('connection', (socket: any) => {
       console.log('Client connected:', socket.id);
 
-      // On join_online, track by deviceId
       socket.on('join_online', async ({ deviceId, username }: I_JoinOnlinePayload) => {
         try {
           const uName = username || socket.id;
 
-          // Add or update the player with the new socketId for the same deviceId
+          // Check if the player already exists by deviceId, and just update socketId
           await onlinePlayersData.addOrUpdateOnlinePlayer(deviceId, uName, socket.id);
 
           // Emit the updated list of online players to all clients
@@ -32,11 +31,7 @@ const socketService = {
 
       socket.on('disconnect', async () => {
         try {
-          // Handle disconnect by removing player if no other sockets are open for the deviceId
-          await onlinePlayersData.removePlayerBySocketId(socket.id);
-
-          // Emit the updated list of online players to all clients
-          await io.emit("get_online_players", await onlinePlayersData.getOnlinePlayers());
+          // Optionally, you can handle disconnections, but avoid removing the player entirely.
           console.log(`Client ${socket.id} disconnected`);
         } catch (error) {
           console.error('Error handling disconnect:', error);
