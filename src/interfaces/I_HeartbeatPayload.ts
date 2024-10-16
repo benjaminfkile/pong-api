@@ -1,5 +1,5 @@
 interface I_HeartbeatPayload {
-    deviceId: string
+    userId: string
 }
 
 export default I_HeartbeatPayload
