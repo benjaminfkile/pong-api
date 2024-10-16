@@ -46,7 +46,7 @@ const onlinePlayersData = {
           .where({ user_id: userId })
           .del();
   
-        console.log(`Removed ${deletedRows} player(s) with userId: ${userId}`);
+        //console.log(`Removed ${deletedRows} player(s) with userId: ${userId}`);
       } catch (error) {
         console.error(`Error removing all players by userId: ${userId}`, error);
         throw error;
@@ -62,7 +62,7 @@ const onlinePlayersData = {
       if (players.length > 1) {
         const oldestPlayer = players[0];
         await db("online_players").where({ id: oldestPlayer.id }).del();
-        console.log(`Removed oldest player with userId: ${userId}`);
+        //console.log(`Removed oldest player with userId: ${userId}`);
       }
     } catch (error) {
       console.error("Error removing oldest player by userId:", error);
@@ -91,7 +91,7 @@ const onlinePlayersData = {
         .where("last_active", "<", db.raw(`NOW() - INTERVAL '${thresholdSeconds} seconds'`))
         .del();
 
-      console.log(`Inactive players older than ${thresholdSeconds} seconds cleaned up.`);
+      //console.log(`Inactive players older than ${thresholdSeconds} seconds cleaned up.`);
 
       // Emit updated list of online players
       const updatedPlayers = await onlinePlayersData.getOnlinePlayers();
