@@ -1,5 +1,5 @@
-import challengesData from "../data/challengeData";
 import onlinePlayersData from "../data/onlinePlayersData";
+import I_AcceptOrDeclinePayload from "../interfaces/I_AcceptOrDeclinePayload";
 import I_HeartbeatPayload from "../interfaces/I_HeartbeatPayload";
 
 const socketService = {
@@ -24,40 +24,41 @@ const socketService = {
       });
 
       //@ts-ignore
-      socket.on("send_challenge", async ({ targetUserId, message }) => {
+      socket.on("send_challenge", async (payload: I_SendChallengePayload) => {
+        const { challengeRecipientUserId, message } = payload
         try {
+          const challengersSocketId = socket.id
           //@ts-ignore
-          const targetSocketId = userSocketMap[targetUserId];
-          if (targetSocketId) {
-            socket.to(targetSocketId).emit("receive_challenge", { userId: socket.userId, message });
+          const challengedUsersSockeId = userSocketMap[challengeRecipientUserId];
+          if (challengedUsersSockeId) {
+            socket.to(challengedUsersSockeId).emit("receive_challenge", { userId: challengersSocketId, message });
           } else {
-            console.log(`Target userId ${targetUserId} is not online`);
+            console.log(`Target userId ${challengeRecipientUserId} is not online`);
           }
         } catch (error) {
           console.error("Error sending challenge:", error);
         }
       });
 
-      //@ts-ignore
-      //{ challengerId: challenge.userId, challengedId: getLocalUserId() }
-      socket.on("accept_challenge", async ({ challengerId, challengedId }) => {
-        console.log(challengerId, challengedId)
+      socket.on("accept_challenge", async (payload: I_AcceptOrDeclinePayload) => {
+        console.log(payload)
+        const { challengerUserId, challengeRecipientUserId } = payload
         try {
-          // @ts-ignore
-          const challengerSocketId = userSocketMap[challengerId]
-          socket.to(challengerSocketId).emit("challenge_accepted", challengedId);
+          //@ts-ignore
+          const challengerSocketId = userSocketMap[challengerUserId]
+          socket.to(challengerSocketId).emit("challenge_accepted", challengeRecipientUserId);
           //!!! create new game here
         } catch (error) {
           console.error("Error handling challenge acceptance:", error);
         }
       });
 
-      //@ts-ignore
-      socket.on("decline_challenge", async ({ challengerId, challengedId }) => {
+      socket.on("decline_challenge", async (payload: I_AcceptOrDeclinePayload) => {
+        const { challengerUserId, challengeRecipientUserId } = payload
         try {
           //@ts-ignore
-          const challengerSocketId = userSocketMap[challengerId]
-          socket.to(challengerSocketId).emit("challenge_declined", challengedId);
+          const challengerSocketId = userSocketMap[challengerUserId]
+          socket.to(challengerSocketId).emit("challenge_declined", challengeRecipientUserId);
         } catch (error) {
           console.error("Error handling challenge decline:", error);
         }
@@ -70,7 +71,6 @@ const socketService = {
             await onlinePlayersData.removeAllByuserId(userId);
             //@ts-ignore
             delete userSocketMap[userId];
-            await challengesData.removeAllChallengesByUserId(userId);
             //console.log(`Removed all devices and challenges for userId: ${userId} after disconnect`);
           } else {
             //console.log(`No userId found for socket: ${socket.id}`);
