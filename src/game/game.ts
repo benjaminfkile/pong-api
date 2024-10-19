@@ -10,6 +10,8 @@ class Game {
   private intervalId: NodeJS.Timeout;
   private width: number;   // New width property
   private height: number;  // New height property
+  private velocityIncreaseFactor: number = 1.35; // Factor to increase velocity after paddle collision
+  private maxVelocity: number = 10;  // Optional: Cap the max velocity to prevent excessive speed
 
   constructor(
     player1SocketId: string,
@@ -59,6 +61,7 @@ class Game {
       if (this.ball.y >= paddle1.y && this.ball.y <= paddle1.y + 100) { // Assuming paddle height is 100
         this.ball.velocityX *= -1; // Invert ball's x direction
         this.ball.x = 25 + this.ball.radius; // Move ball outside the paddle to avoid sticking
+        this.increaseBallSpeed(); // Increase speed on collision
       } else if (this.ball.x - this.ball.radius <= 0) {
         // Ball actually hit the left wall (missed paddle)
         this.handleOutOfBounds("left");
@@ -72,10 +75,26 @@ class Game {
       if (this.ball.y >= paddle2.y && this.ball.y <= paddle2.y + 100) { // Assuming paddle height is 100
         this.ball.velocityX *= -1; // Invert ball's x direction
         this.ball.x = this.width - 25 - this.ball.radius; // Move ball outside the paddle to avoid sticking
+        this.increaseBallSpeed(); // Increase speed on collision
       } else if (this.ball.x + this.ball.radius >= this.width) {
         // Ball actually hit the right wall (missed paddle)
         this.handleOutOfBounds("right");
       }
+    }
+  }
+
+  private increaseBallSpeed() {
+    // Increase the ball's speed by multiplying the velocities by a factor
+    this.ball.velocityX *= this.velocityIncreaseFactor;
+    this.ball.velocityY *= this.velocityIncreaseFactor;
+
+    // Cap the maximum velocity to prevent the ball from becoming too fast
+    if (Math.abs(this.ball.velocityX) > this.maxVelocity) {
+      this.ball.velocityX = this.maxVelocity * Math.sign(this.ball.velocityX);
+    }
+
+    if (Math.abs(this.ball.velocityY) > this.maxVelocity) {
+      this.ball.velocityY = this.maxVelocity * Math.sign(this.ball.velocityY);
     }
   }
 
@@ -85,7 +104,7 @@ class Game {
     this.ball.y = this.height / 2;
     this.ball.velocityX = side === "left" ? 2 : -2; // Reset velocity, and send it towards the opposite direction
     this.ball.velocityY = 2;
-    
+
     // Optionally, emit a scoring event or notify players
     this.io.emit("score", { side, message: "Ball out of bounds, reset!" });
   }
@@ -95,10 +114,8 @@ class Game {
     if (y < 0) y = 0;
     if (y > this.height - 100) y = this.height - 100; // Assuming paddle height is 100
 
-    console.log("Updating paddle for userId:", userId); // Log to confirm which userId is being updated
     if (this.paddles[userId]) {
       this.paddles[userId].y = y;
-      console.log(`Paddle position for ${userId}:`, y);
     } else {
       console.log(`No paddle found for userId: ${userId}`);
     }
