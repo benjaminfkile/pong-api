@@ -1,63 +1,72 @@
 class Game {
-    private player1Y!: number
-    private player2Y!: number
-    private ballX!: number
-    private ballY!: number
-    private ballVelocityX!: number
-    private ballVelocityY!: number
-    private scorePlayer1!: number
-    private scorePlayer2!: number
-  
-    constructor() {
-      this.resetGame() // Initialize all properties when a new game is created
-    }
-  
-    // Reset the game state to its initial values
-    resetGame() {
-      this.player1Y = 50 // Starting position for player 1
-      this.player2Y = 50 // Starting position for player 2
-      this.ballX = 50 // Center of the game area
-      this.ballY = 50 // Center of the game area
-      this.ballVelocityX = 2 // Starting velocity of the ball on the X-axis
-      this.ballVelocityY = 2 // Starting velocity of the ball on the Y-axis
-      this.scorePlayer1 = 0 // Initial score for player 1
-      this.scorePlayer2 = 0 // Initial score for player 2
-    }
-  
-    // Update the ball's position based on its velocity
-    updateBallPosition() {
-      this.ballX += this.ballVelocityX
-      this.ballY += this.ballVelocityY
-  
-      // Handle ball collisions with top and bottom walls
-      if (this.ballY <= 0 || this.ballY >= 100) {
-        this.ballVelocityY *= -1 // Reverse the Y-velocity if the ball hits the wall
-      }
-  
-      // Add more logic here to handle paddle collisions and scoring
-    }
-  
-    // Move a player's paddle
-    movePlayer(player: number, newY: number) {
-      if (player === 1) {
-        this.player1Y = newY // Update player 1's Y position
-      } else {
-        this.player2Y = newY // Update player 2's Y position
-      }
-    }
-  
-    // Return the current game state to be sent to the client
-    getGameState() {
-      return {
-        player1Y: this.player1Y,
-        player2Y: this.player2Y,
-        ballX: this.ballX,
-        ballY: this.ballY,
-        scorePlayer1: this.scorePlayer1,
-        scorePlayer2: this.scorePlayer2,
-      }
-    }
+  private ball: { x: number; y: number; velocityX: number; velocityY: number };
+  private paddles: { [key: string]: { x: number; y: number } };
+  private io: any;
+  private player1SocketId: string;
+  private player2SocketId: string;
+  private player1Id: string;
+  private player2Id: string
+  //@ts-ignore
+  private intervalId: NodeJS.Timeout;
+
+  constructor(player1SocketId: string, player2SocketId: string, player1Id: string, player2Id: string, io: any) {
+    this.io = io;
+    this.player1SocketId = player1SocketId;
+    this.player2SocketId = player2SocketId;
+    this.player1Id = player1Id
+    this.player2Id = player2Id
+    this.ball = { x: 300, y: 200, velocityX: 2, velocityY: 2 };
+    this.paddles = {
+      [player1Id]: { x: 10, y: 150 },
+      [player2Id]: { x: 580, y: 0 }
+    };
+    this.startGameLoop();
   }
-  
-  export default Game
-  
+
+  private startGameLoop() {
+    this.intervalId = setInterval(() => {
+      this.updateBall();
+      this.sendGameState();
+    }, 1000 / 60); // 60 FPS
+  }
+
+  private updateBall() {
+    this.ball.x += this.ball.velocityX;
+    this.ball.y += this.ball.velocityY;
+
+    // Ball collision with top and bottom
+    if (this.ball.y <= 0 || this.ball.y >= 400) {
+      this.ball.velocityY *= -1;
+    }
+
+    // Ball out of bounds or paddle collision detection logic
+    // Handle scoring and reset game state if necessary
+  }
+
+  public updatePaddlePosition(userId: string, y: number) {
+    console.log("Updating paddle for userId:", userId); // Log to confirm which userId is being updated
+    if (this.paddles[userId]) {
+        this.paddles[userId].y = y;
+        console.log(`Paddle position for ${userId}:`, y);
+    } else {
+        console.log(`No paddle found for userId: ${userId}`);
+    }
+}
+  private sendGameState() {
+    // Emit to specific socket IDs
+    const payload = {
+      ball: this.ball,
+      player1: this.paddles[this.player1Id],
+      player2: this.paddles[this.player2Id]
+    }
+
+    this.io.to(this.player1SocketId).emit("game_update", payload);
+    this.io.to(this.player2SocketId).emit("game_update", payload);
+  }
+
+  public stopGame() {
+    clearInterval(this.intervalId);
+  }
+}
+
+export default Game;
