@@ -66,8 +66,7 @@ const socketService = {
       });
 
       socket.on("start_game", async (payload: I_Challenge) => {
-        console.log(payload)
-        const { challengerUserId, challengeRecipientUserId } = payload;
+        const { challengerUserId, challengeRecipientUserId, width, height, ballRadius } = payload;
         //@ts-ignore
         const challengerSocketId = userSocketMap[challengerUserId];
         //@ts-ignore
@@ -77,13 +76,22 @@ const socketService = {
 
         // Create a new game instance if it doesn't exist
         if (!gamesMap.has(gameKey)) {
-          const newGame = new Game(challengerSocketId, challengeRecipientSocketId, challengerUserId, challengeRecipientUserId, io);
+          const newGame = new Game(
+            challengerSocketId,
+            challengeRecipientSocketId,
+            challengerUserId,
+            challengeRecipientUserId,
+            io,
+            width,
+            height,
+            ballRadius
+          );
           gamesMap.set(gameKey, newGame);
           userToGameMap.set(challengerUserId, gameKey);
           userToGameMap.set(challengeRecipientUserId, gameKey);
           // Notify players that the game has started
-          io.to(challengerSocketId).emit("game_started", { gameKey: gameKey, player: 1 });
-          io.to(challengeRecipientSocketId).emit("game_started", { gameKey: gameKey, player: 2 });
+          io.to(challengerSocketId).emit("game_started", { gameKey: gameKey, player: 1, width: width, height: height, ballRadius: ballRadius });
+          io.to(challengeRecipientSocketId).emit("game_started", { gameKey: gameKey, player: 2, width: width, height: height, ballRadius: ballRadius });
         }
       });
 
@@ -97,7 +105,7 @@ const socketService = {
               game.updatePaddlePosition(id, y);
             }
           }
-        }else{
+        } else {
           console.log("wrong socket")
         }
       });
