@@ -5,15 +5,15 @@ import I_GameStartedPayload from "../interfaces/I_GameStartedPayload";
 import I_HeartbeatPayload from "../interfaces/I_HeartbeatPayload";
 import { v4 as uuidv4 } from "uuid"
 
+// Declare maps as part of the socketService for global access
+const userSocketMap: { [key: string]: string } = {}; // Store userId to socketId mapping
+const gamesMap = new Map<string, Game>(); // Stores active games
+const userToGameMap = new Map<string, string>(); // Maps userId to gameKey for quick lookup
+
 const socketService = {
   init: (io: any) => {
-    const userSocketMap = {};  // Store userId to socketId mapping
-    const gamesMap = new Map<string, Game>(); // Stores active games
-    const userToGameMap = new Map<string, string>(); // Maps userId to gameKey for quick lookup
-
     io.on("connection", (socket: any) => {
       //console.log("Client connected:", socket.id);
-
       // Store the userId in the socket object when the player joins
       socket.on("join_online", async ({ userId }: I_HeartbeatPayload) => {
         try {
@@ -157,6 +157,14 @@ const socketService = {
             //@ts-ignore
             delete userSocketMap[userId];
             //console.log(`Removed all devices and challenges for userId: ${userId} after disconnect`);
+            // If the disconnected user is in a game, remove the game
+            const gameKey = userToGameMap.get(userId);
+            if (gameKey) {
+              const game = gamesMap.get(gameKey);
+              if (game) {
+                socketService.cleanupGameInstance(game.player1Id, game.player2Id);
+              }
+            }
           } else {
             //console.log(`No userId found for socket: ${socket.id}`);
           }
@@ -167,6 +175,25 @@ const socketService = {
       });
     });
     console.log("Socket.IO server initialized");
+  },
+  // Function to clean up game instances and mappings
+  cleanupGameInstance: (player1Id: string, player2Id: string) => {
+    const gameKey1 = userToGameMap.get(player1Id);
+    if (gameKey1 && gamesMap.has(gameKey1)) {
+      gamesMap.delete(gameKey1);
+      console.log(`Game for player1 ${player1Id} has been removed.`);
+    }
+
+    userToGameMap.delete(player1Id);
+
+    const gameKey2 = userToGameMap.get(player2Id);
+    if (gameKey2 && gamesMap.has(gameKey2)) {
+      gamesMap.delete(gameKey2);
+      console.log(`Game for player2 ${player2Id} has been removed.`);
+    }
+    
+    userToGameMap.delete(player2Id);
+
   },
 };
 

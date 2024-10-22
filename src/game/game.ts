@@ -1,5 +1,6 @@
 import I_GameOverPayload from "../interfaces/I_GameOverPayload";
 import I_ScorePayload from "../interfaces/I_ScorePayload";
+import socketService from "../socket_io/socketService";
 
 class Game {
   private ball: { x: number; y: number; velocityX: number; velocityY: number; size: number };
@@ -7,8 +8,8 @@ class Game {
   private io: any;
   private player1SocketId: string;
   private player2SocketId: string;
-  private player1Id: string;
-  private player2Id: string;
+  public player1Id: string;
+  public player2Id: string;
   //@ts-ignore
   private intervalId: NodeJS.Timeout;
   private width: number;
@@ -210,6 +211,7 @@ class Game {
   // Stops the game loop
   public stopGame() {
     clearInterval(this.intervalId);
+    socketService.cleanupGameInstance(this.player1Id, this.player2Id)
   }
 }
 
