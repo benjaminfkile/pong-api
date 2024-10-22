@@ -1,6 +1,7 @@
 import onlinePlayersData from "../data/onlinePlayersData";
 import Game from "../game/game";
 import I_Challenge from "../interfaces/I_Challenge";
+import I_GameStartedPayload from "../interfaces/I_GameStartedPayload";
 import I_HeartbeatPayload from "../interfaces/I_HeartbeatPayload";
 import { v4 as uuidv4 } from "uuid"
 
@@ -66,7 +67,7 @@ const socketService = {
       });
 
       socket.on("start_game", async (payload: I_Challenge) => {
-        const { challengerUserId, challengeRecipientUserId, width, height, ballSize, paddleHeight, paddleWidth, maxVelocity, velocityIncreaseFactor } = payload;
+        const { challengerUserId, challengeRecipientUserId, width, height, ballSize, paddleHeight, paddleWidth, pointsToWin, maxVelocity, velocityIncreaseFactor } = payload;
         //@ts-ignore
         const challengerSocketId = userSocketMap[challengerUserId];
         //@ts-ignore
@@ -87,20 +88,23 @@ const socketService = {
             ballSize,
             paddleHeight,
             paddleWidth,
+            pointsToWin,
             maxVelocity,
             velocityIncreaseFactor
           );
+
           gamesMap.set(gameKey, newGame);
           userToGameMap.set(challengerUserId, gameKey);
           userToGameMap.set(challengeRecipientUserId, gameKey);
-          // Notify players that the game has started
+
           const players = [
             { socketId: challengerSocketId, player: 1 },
             { socketId: challengeRecipientSocketId, player: 2 }
           ];
 
           players.forEach(({ socketId, player }) => {
-            io.to(socketId).emit("game_started", {
+
+            const payload: I_GameStartedPayload = {
               gameKey: gameKey,
               player: player,
               width: width,
@@ -108,9 +112,12 @@ const socketService = {
               ballSize: ballSize,
               paddleHeight: paddleHeight,
               paddleWidth: paddleWidth,
+              pointsToWin: pointsToWin,
               maxVelocity: maxVelocity,
               velocityIncreaseFactor: velocityIncreaseFactor
-            });
+            }
+
+            io.to(socketId).emit("game_started", payload);
           });
         }
       });

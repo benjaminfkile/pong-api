@@ -1,6 +1,6 @@
-interface I_Challenge {
-    challengerUserId: string
-    challengeRecipientUserId: string
+interface I_GameStartedPayload{
+    gameKey: string,
+    player: number,
     width: number
     height: number
     ballSize: number
@@ -10,4 +10,5 @@ interface I_Challenge {
     maxVelocity: number
     velocityIncreaseFactor: number
 }
-export default I_Challenge
+
+export default I_GameStartedPayload
