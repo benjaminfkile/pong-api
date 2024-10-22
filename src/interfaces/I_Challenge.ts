@@ -3,6 +3,10 @@ interface I_Challenge {
     challengeRecipientUserId: string
     width: number
     height: number
-    ballRadius: number
+    ballSize: number
+    paddleHeight: number
+    paddleWidth: number
+    maxVelocity: number
+    velocityIncreaseFactor: number
 }
 export default I_Challenge

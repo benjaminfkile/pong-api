@@ -66,7 +66,7 @@ const socketService = {
       });
 
       socket.on("start_game", async (payload: I_Challenge) => {
-        const { challengerUserId, challengeRecipientUserId, width, height, ballRadius } = payload;
+        const { challengerUserId, challengeRecipientUserId, width, height, ballSize, paddleHeight, paddleWidth, maxVelocity, velocityIncreaseFactor } = payload;
         //@ts-ignore
         const challengerSocketId = userSocketMap[challengerUserId];
         //@ts-ignore
@@ -84,14 +84,18 @@ const socketService = {
             io,
             width,
             height,
-            ballRadius
+            ballSize,
+            paddleHeight,
+            paddleWidth,
+            maxVelocity,
+            velocityIncreaseFactor
           );
           gamesMap.set(gameKey, newGame);
           userToGameMap.set(challengerUserId, gameKey);
           userToGameMap.set(challengeRecipientUserId, gameKey);
           // Notify players that the game has started
-          io.to(challengerSocketId).emit("game_started", { gameKey: gameKey, player: 1, width: width, height: height, ballRadius: ballRadius });
-          io.to(challengeRecipientSocketId).emit("game_started", { gameKey: gameKey, player: 2, width: width, height: height, ballRadius: ballRadius });
+          io.to(challengerSocketId).emit("game_started", { gameKey: gameKey, player: 1, width: width, height: height, ballSize: ballSize, paddleHeight: paddleHeight, paddleWidth: paddleWidth, maxVelocity: maxVelocity, velocityIncreaseFactor: velocityIncreaseFactor });
+          io.to(challengeRecipientSocketId).emit("game_started", { gameKey: gameKey, player: 2, width: width, height: height, ballSize: ballSize, paddleHeight: paddleHeight, paddleWidth: paddleWidth, maxVelocity: maxVelocity, velocityIncreaseFactor: velocityIncreaseFactor });
         }
       });
 
