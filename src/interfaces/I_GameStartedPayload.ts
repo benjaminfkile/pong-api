@@ -1,4 +1,6 @@
 interface I_GameStartedPayload{
+    challengerUserId: string
+    challengeRecipientUserId: string
     gameKey: string,
     player: number,
     width: number

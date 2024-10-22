@@ -105,6 +105,8 @@ const socketService = {
           players.forEach(({ socketId, player }) => {
 
             const payload: I_GameStartedPayload = {
+              challengerUserId: challengerUserId,
+              challengeRecipientUserId: challengeRecipientUserId,
               gameKey: gameKey,
               player: player,
               width: width,
@@ -134,6 +136,16 @@ const socketService = {
           }
         } else {
           console.log("wrong socket")
+        }
+      });
+
+      // Update last_active via heartbeat
+      socket.on('heartbeat', async ({ userId }: I_HeartbeatPayload) => {
+        try {
+          await onlinePlayersData.updateLastActiveStatus(userId);
+          // console.log("Received heartbeat from device:", userId);
+        } catch (error) {
+          console.error('Error updating lastActive for player:', error);
         }
       });
 
