@@ -17,7 +17,7 @@ const socketService = {
       socket.on("join_online", async ({ userId }: I_HeartbeatPayload) => {
         try {
           socket.userId = userId;
-          await onlinePlayersData.removeOldestByuserId(userId);
+          await onlinePlayersData.removeOldestByUserId(userId);
           await onlinePlayersData.addOrUpdateOnlinePlayer(userId, socket.id);
           //@ts-ignore
           userSocketMap[userId] = socket.id;
@@ -94,8 +94,24 @@ const socketService = {
           userToGameMap.set(challengerUserId, gameKey);
           userToGameMap.set(challengeRecipientUserId, gameKey);
           // Notify players that the game has started
-          io.to(challengerSocketId).emit("game_started", { gameKey: gameKey, player: 1, width: width, height: height, ballSize: ballSize, paddleHeight: paddleHeight, paddleWidth: paddleWidth, maxVelocity: maxVelocity, velocityIncreaseFactor: velocityIncreaseFactor });
-          io.to(challengeRecipientSocketId).emit("game_started", { gameKey: gameKey, player: 2, width: width, height: height, ballSize: ballSize, paddleHeight: paddleHeight, paddleWidth: paddleWidth, maxVelocity: maxVelocity, velocityIncreaseFactor: velocityIncreaseFactor });
+          const players = [
+            { socketId: challengerSocketId, player: 1 },
+            { socketId: challengeRecipientSocketId, player: 2 }
+          ];
+
+          players.forEach(({ socketId, player }) => {
+            io.to(socketId).emit("game_started", {
+              gameKey: gameKey,
+              player: player,
+              width: width,
+              height: height,
+              ballSize: ballSize,
+              paddleHeight: paddleHeight,
+              paddleWidth: paddleWidth,
+              maxVelocity: maxVelocity,
+              velocityIncreaseFactor: velocityIncreaseFactor
+            });
+          });
         }
       });
 

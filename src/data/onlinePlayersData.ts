@@ -54,7 +54,7 @@ const onlinePlayersData = {
     },
 
   // Remove the oldest entry by userId (if multiple)
-  removeOldestByuserId: async (userId: string) => {
+  removeOldestByUserId: async (userId: string) => {
     try {
       const players = await db("online_players").where({ user_id: userId }).orderBy("last_active", "asc");
 
