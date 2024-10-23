@@ -5,7 +5,7 @@ const onlinePlayersData = {
   // Get all online players
   getOnlinePlayers: async () => {
     try {
-      const players = await db("online_players").select("user_id", "socket_id", "last_active");
+      const players = await db("online_players").select("user_id", "user_name", "last_active");
       return players;
     } catch (error) {
       console.error("Error retrieving online players:", error);
@@ -14,7 +14,7 @@ const onlinePlayersData = {
   },
 
   // Add or update an online player by userId
-  addOrUpdateOnlinePlayer: async (userId: string, socketId: string) => {
+  addOrUpdateOnlinePlayer: async (userId: string, userName: string) => {
     try {
       // Check if the userId already exists
       const playerExists = await db("online_players").where({ user_id: userId }).first();
@@ -23,12 +23,12 @@ const onlinePlayersData = {
         // If the player exists, update their last_active timestamp
         await db("online_players")
           .where({ user_id: userId })
-          .update({ socket_id: socketId, last_active: db.fn.now()});
+          .update({ user_name: userName, last_active: db.fn.now() });
       } else {
         // If the player doesn't exist, create a new record
         await db("online_players").insert({
           user_id: userId,
-          socket_id: socketId,
+          user_name: userName,
           last_active: db.fn.now(),
         });
       }
@@ -38,20 +38,20 @@ const onlinePlayersData = {
     }
   },
 
-    // Remove all players by userId
-    removeAllByuserId: async (userId: string) => {
-      try {
-        // Delete all players associated with the userId
-        const deletedRows = await db("online_players")
-          .where({ user_id: userId })
-          .del();
-  
-        //console.log(`Removed ${deletedRows} player(s) with userId: ${userId}`);
-      } catch (error) {
-        console.error(`Error removing all players by userId: ${userId}`, error);
-        throw error;
-      }
-    },
+  // Remove all players by userId
+  removeAllByuserId: async (userId: string) => {
+    try {
+      // Delete all players associated with the userId
+      const deletedRows = await db("online_players")
+        .where({ user_id: userId })
+        .del();
+
+      //console.log(`Removed ${deletedRows} player(s) with userId: ${userId}`);
+    } catch (error) {
+      console.error(`Error removing all players by userId: ${userId}`, error);
+      throw error;
+    }
+  },
 
   // Remove the oldest entry by userId (if multiple)
   removeOldestByUserId: async (userId: string) => {

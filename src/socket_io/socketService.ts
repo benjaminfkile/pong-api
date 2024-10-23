@@ -4,6 +4,9 @@ import I_Challenge from "../interfaces/I_Challenge";
 import I_GameStartedPayload from "../interfaces/I_GameStartedPayload";
 import I_HeartbeatPayload from "../interfaces/I_HeartbeatPayload";
 import { v4 as uuidv4 } from "uuid"
+import I_JoinOnlinePayload from "../interfaces/I_JoinOnlinePayload";
+import randomName from "../utils/randomName";
+import convertSnakeToPascal from "../utils/convertSnakeToPascal";
 
 // Declare maps as part of the socketService for global access
 const userSocketMap: { [key: string]: string } = {}; // Store userId to socketId mapping
@@ -15,13 +18,25 @@ const socketService = {
     io.on("connection", (socket: any) => {
       //console.log("Client connected:", socket.id);
       // Store the userId in the socket object when the player joins
-      socket.on("join_online", async ({ userId }: I_HeartbeatPayload) => {
+      socket.on("join_online", async (payload: I_JoinOnlinePayload) => {
+        const { userId, userName } = payload
         try {
           socket.userId = userId;
+          let uName = userName
+
+          if (!uName) {
+            uName = convertSnakeToPascal(randomName())
+          }
+
           await onlinePlayersData.removeOldestByUserId(userId);
-          await onlinePlayersData.addOrUpdateOnlinePlayer(userId, socket.id);
+          await onlinePlayersData.addOrUpdateOnlinePlayer(userId, uName);
           //@ts-ignore
           userSocketMap[userId] = socket.id;
+
+          if (!userName) {
+            await io.to(socket.id).emit("receive_random_user_name", uName)
+          }
+
           await io.emit("get_online_players", await onlinePlayersData.getOnlinePlayers());
         } catch (error) {
           console.error("Error handling join_online:", error);
@@ -191,7 +206,7 @@ const socketService = {
       gamesMap.delete(gameKey2);
       console.log(`Game for player2 ${player2Id} has been removed.`);
     }
-    
+
     userToGameMap.delete(player2Id);
 
   },
