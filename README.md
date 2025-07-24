@@ -54,8 +54,8 @@ NODE_ENV=development       # Or production
 1. Clone the repository:
 
 ```bash
-git clone <repo-url>
-cd <repo-folder>
+git clone git@github.com:benjaminfkile/pong-api.git
+cd pong-api
 ```
 
 2. Install dependencies:
