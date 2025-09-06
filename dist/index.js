@@ -5,11 +5,16 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const dotenv_1 = __importDefault(require("dotenv"));
 const app_1 = __importDefault(require("./src/app"));
-// Configuring dotenv
+const http_1 = __importDefault(require("http"));
+const socket_io_1 = __importDefault(require("socket.io"));
+const socketService_1 = __importDefault(require("./src/services/socketService"));
 dotenv_1.default.config();
-// Getting the PORT from environment variables
-const PORT = process.env.PORT || 8000; // Default to 3000 if PORT is not provided in the environment
-// Starting the server
-app_1.default.listen(PORT, () => {
-    console.log(`⚡️[server]: Server is running at http://localhost:${PORT}`);
+const port = process.env.PORT || 8000;
+const server = http_1.default.createServer(app_1.default);
+const io = (0, socket_io_1.default)(server, {
+    transports: ["websocket"]
+});
+socketService_1.default.init(io);
+server.listen(port, () => {
+    console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
 });

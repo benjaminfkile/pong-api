@@ -43,4 +43,4 @@ app.use(function errorHandler(err: Error, req: Request, res: Response, next: Nex
 })
 
 
-export default app//bump
+export default app

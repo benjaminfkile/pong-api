@@ -1,14 +1,21 @@
-
 import dotenv from "dotenv"
 import app from "./src/app"
+import http from "http"
+import socketIO from "socket.io"
+import socketService from "./src/services/socketService"
 
-// Configuring dotenv
 dotenv.config()
 
-// Getting the PORT from environment variables
-const PORT = process.env.PORT || 8000 // Default to 3000 if PORT is not provided in the environment
+const port = process.env.PORT || 8000 
 
-// Starting the server
-app.listen(PORT, () => {
-  console.log(`⚡️[server]: Server is running at http://localhost:${PORT}`)
+const server = http.createServer(app)
+
+const io = socketIO(server, {
+  transports: ["websocket"] 
+})
+
+socketService.init(io)
+
+server.listen(port, () => {
+  console.log(`⚡️[server]: Server is running at http://localhost:${port}`)
 })
