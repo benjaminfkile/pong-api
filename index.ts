@@ -3,7 +3,7 @@ dotenv.config()
 import app from "./src/app"
 import http from "http"
 import socketIO from "socket.io"
-import socketService from "./src/services/socketService"
+import socketService from "./src/socketIO/services/socketService"
 
 const port = process.env.PORT || 8000 
 
