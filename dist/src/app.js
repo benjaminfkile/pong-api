@@ -7,18 +7,21 @@ const express_1 = __importDefault(require("express"));
 const morgan_1 = __importDefault(require("morgan"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
+const usersRouter_1 = __importDefault(require("./routers/usersRouter"));
 const NODE_ENV = process.env.NODE_ENV;
 const app = (0, express_1.default)();
 // Type declaration for morgan options
 const morganOption = (NODE_ENV === "production") ? "tiny" : "common";
 // Middleware
-app.use((0, morgan_1.default)(morganOption)); // Type declaration for morgan
+app.use((0, morgan_1.default)(morganOption));
 app.use((0, cors_1.default)());
 app.use((0, helmet_1.default)());
+app.use(express_1.default.json());
 // Routes
 app.get("/", (req, res) => {
     res.send("Hi pong");
 });
+app.use("/api/users", usersRouter_1.default);
 // Catch uncaught exceptions
 process.on('uncaughtException', (error) => {
     console.error('Uncaught Exception:', error);

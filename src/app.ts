@@ -2,6 +2,7 @@ import express, { Express, NextFunction, Request, Response } from "express"
 import morgan from "morgan"
 import cors from "cors"
 import helmet from "helmet"
+import usersRoute from "./routers/usersRouter"
 
 const NODE_ENV = process.env.NODE_ENV
 const app: Express = express()
@@ -10,14 +11,17 @@ const app: Express = express()
 const morganOption: string = (NODE_ENV === "production") ? "tiny" : "common"
 
 // Middleware
-app.use(morgan(morganOption)) // Type declaration for morgan
+app.use(morgan(morganOption))
 app.use(cors())
 app.use(helmet())
+app.use(express.json())
 
 // Routes
 app.get("/", (req: Request, res: Response) => {
   res.send("Hi pong")
 })
+
+app.use("/api/users", usersRoute)
 
 // Catch uncaught exceptions
 process.on('uncaughtException', (error: Error) => {
